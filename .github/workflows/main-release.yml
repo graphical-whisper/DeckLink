@@ -15,28 +15,18 @@ jobs:
 
       - name: Build Backend
         run: |
-          npm install --workspace=services/backend
-          npm run build --workspace=services/backend
+          cd apps/backend
+          npm install
+          npm run build
 
       - name: Deploy Backend
-        run: ./scripts/deploy-backend.sh
+        run: ./infra/scripts/deploy-backend.sh
 
       - name: Publish Dart SDK
         uses: dart-lang/setup-dart@v1
       - run: |
-          cd libs/sdk-dart
+          cd libs/dto
           dart pub publish --force
-
-      - name: Publish NPM SDK
-        run: |
-          cd libs/sdk-js
-          npm publish
-
-      - name: Publish Python SDK
-        run: |
-          cd libs/sdk-python
-          python -m build
-          python -m twine upload dist/*
 
       - name: Generate Release Notes
         uses: softprops/action-gh-release@v2

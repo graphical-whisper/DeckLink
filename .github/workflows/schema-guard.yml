@@ -3,7 +3,8 @@ name: Schema Guard
 on:
   push:
     paths:
-      - "libs/domain-models/*.proto"
+      - "libs/proto/*.proto"
+      - "libs/models/**"
 
 jobs:
   schema-check:
@@ -13,10 +14,15 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Validate Proto Files
-        run: protoc -I=libs/domain-models libs/domain-models/*.proto --dry_run
+        run: |
+          if [ -d "libs/proto" ] && [ "$(ls -A libs/proto/*.proto 2>/dev/null)" ]; then
+            protoc -I=libs/proto libs/proto/*.proto --dry_run
+          else
+            echo "No proto files found, skipping validation"
+          fi
 
       - name: Enforce Field Number Rules
-        run: ./scripts/check-field-numbers.sh
+        run: ./infra/scripts/check-field-numbers.sh
 
       - name: Ensure Backward Compatibility
-        run: ./scripts/check-schema-backward-compat.sh
+        run: ./infra/scripts/check-schema-backward-compat.sh

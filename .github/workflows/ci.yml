@@ -1,0 +1,21 @@
+name: Generate Models
+
+on:
+  push:
+    paths:
+      - 'libs/domain-models/*.proto'
+
+jobs:
+  regenerate-sdks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run model generator
+        run: bash scripts/generate-models.sh
+      - name: Commit updated SDKs
+        run: |
+          git config --global user.email "bot@tcgexchange.io"
+          git config --global user.name "ModelBot"
+          git add libs/sdk-*
+          git commit -m "chore(models): regenerate SDKs"
+          git push
