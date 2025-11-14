@@ -1,0 +1,150 @@
+syntax = "proto3";
+
+package tcg_exchange;
+
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/wrappers.proto";
+
+// User roles within the platform
+enum UserRole {
+  USER_ROLE_UNSPECIFIED = 0;
+  USER_ROLE_PLAYER = 1;
+  USER_ROLE_TRADER = 2;
+  USER_ROLE_VENDOR = 3;
+  USER_ROLE_MODERATOR = 4;
+  USER_ROLE_ADMIN = 5;
+}
+
+// User status
+enum UserStatus {
+  USER_STATUS_UNSPECIFIED = 0;
+  USER_STATUS_PENDING_VERIFICATION = 1;
+  USER_STATUS_ACTIVE = 2;
+  USER_STATUS_SUSPENDED = 3;
+  USER_STATUS_BANNED = 4;
+}
+
+// Currency preferences
+enum Currency {
+  CURRENCY_UNSPECIFIED = 0;
+  CURRENCY_USD = 1;
+  CURRENCY_EUR = 2;
+  CURRENCY_GBP = 3;
+  CURRENCY_JPY = 4;
+}
+
+// Core User model
+message User {
+  string id = 1;                    // UUID
+  string email = 2;
+  string username = 3;
+  string display_name = 4;
+  UserRole role = 5;
+  UserStatus status = 6;
+  Currency preferred_currency = 7;
+  
+  // Profile information
+  google.protobuf.StringValue avatar_url = 8;
+  google.protobuf.StringValue bio = 9;
+  google.protobuf.StringValue location = 10;
+  
+  // Timestamps
+  google.protobuf.Timestamp created_at = 11;
+  google.protobuf.Timestamp updated_at = 12;
+  google.protobuf.Timestamp last_login_at = 13;
+  
+  // Security
+  bool email_verified = 14;
+  bool two_factor_enabled = 15;
+  
+  // Preferences
+  UserPreferences preferences = 16;
+  repeated UserSocialLinks social_links = 17;
+}
+
+// User preferences
+message UserPreferences {
+  bool email_notifications = 1;
+  bool push_notifications = 2;
+  bool sms_notifications = 3;
+  bool public_profile = 4;
+  bool show_online_status = 5;
+  string language = 6;
+  string timezone = 7;
+}
+
+// Social media links
+message UserSocialLinks {
+  string platform = 1;  // "twitter", "discord", "youtube", etc.
+  string username = 2;
+  string url = 3;
+}
+
+// User statistics
+message UserStats {
+  string user_id = 1;
+  int32 total_trades = 2;
+  int32 successful_trades = 3;
+  double success_rate = 4;
+  double total_volume = 5;
+  double average_rating = 6;
+  int32 rating_count = 7;
+  
+  // Card collection stats
+  int32 total_cards_owned = 8;
+  int32 unique_cards_owned = 9;
+  double collection_value = 10;
+}
+
+// Authentication messages
+message LoginRequest {
+  string email = 1;
+  string password = 2;
+  string two_factor_code = 3;
+}
+
+message LoginResponse {
+  string access_token = 1;
+  string refresh_token = 2;
+  User user = 3;
+  google.protobuf.Timestamp expires_at = 4;
+}
+
+message RegisterRequest {
+  string email = 1;
+  string password = 2;
+  string username = 3;
+  string display_name = 4;
+  Currency preferred_currency = 5;
+}
+
+message RegisterResponse {
+  User user = 1;
+  string verification_token = 2;
+}
+
+// User service definition
+service UserService {
+  rpc Register(RegisterRequest) returns (RegisterResponse);
+  rpc Login(LoginRequest) returns (LoginResponse);
+  rpc GetUser(GetUserRequest) returns (User);
+  rpc UpdateUser(UpdateUserRequest) returns (User);
+  rpc UpdatePreferences(UpdatePreferencesRequest) returns (UserPreferences);
+}
+
+message GetUserRequest {
+  string user_id = 1;
+}
+
+message UpdateUserRequest {
+  string user_id = 1;
+  google.protobuf.StringValue display_name = 2;
+  google.protobuf.StringValue avatar_url = 3;
+  google.protobuf.StringValue bio = 4;
+  google.protobuf.StringValue location = 5;
+}
+
+message UpdatePreferencesRequest {
+  string user_id = 1;
+  UserPreferences preferences = 2;
+}
