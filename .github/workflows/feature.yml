@@ -1,0 +1,32 @@
+name: Feature Checks
+
+on:
+  push:
+    branches:
+      - "feature/**"
+
+jobs:
+  quality:
+    name: Lint & Unit Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install dependencies
+        run: npm install --workspace=services/backend
+
+      - name: Lint backend
+        run: npm run lint --workspace=services/backend
+
+      - name: Run backend tests
+        run: npm test --workspace=services/backend
+
+      - name: Validate proto schemas
+        run: ./scripts/validate-proto.sh

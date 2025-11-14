@@ -1,0 +1,46 @@
+name: Develop Integration
+
+on:
+  pull_request:
+    branches:
+      - develop
+
+jobs:
+  integration:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Dependencies (Backend)
+        run: npm install --workspace=services/backend
+
+      - name: Run All Tests (Backend)
+        run: npm test --workspace=services/backend
+
+      - name: Validate Schema Diff
+        run: ./scripts/check-schema-diff.sh
+
+      - name: Regenerate SDKs
+        run: ./scripts/generate-models.sh
+
+      - name: Verify SDKs are committed
+        run: |
+          if [[ -n "$(git status --porcelain libs/sdk-*)" ]]; then
+            echo "SDKs changed but not committed!"
+            exit 1
+          fi
+
+      - name: Build Flutter (Mobile)
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: "3.24.0"
+
+      - name: Flutter pub get
+        run: flutter pub get
+        working-directory: apps/mobile
+
+      - name: Flutter analyze
+        run: flutter analyze
+        working-directory: apps/mobile

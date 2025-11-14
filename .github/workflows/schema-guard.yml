@@ -1,0 +1,22 @@
+name: Schema Guard
+
+on:
+  push:
+    paths:
+      - "libs/domain-models/*.proto"
+
+jobs:
+  schema-check:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate Proto Files
+        run: protoc -I=libs/domain-models libs/domain-models/*.proto --dry_run
+
+      - name: Enforce Field Number Rules
+        run: ./scripts/check-field-numbers.sh
+
+      - name: Ensure Backward Compatibility
+        run: ./scripts/check-schema-backward-compat.sh
