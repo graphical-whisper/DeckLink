@@ -1,0 +1,64 @@
+{
+  "usuario": {
+    "id_usuario": "u-77-poke-master",
+    "nombre_completo": "PokeMaster77",
+    "correo": "pokemaster77@trading.com",
+    "telefono": "+34 600 000 000",
+    "ubicacion": "Madrid, España",
+    "fecha_registro": "2024-01-15T10:00:00Z",
+    "tipo_usuario": "coleccionista",
+    "reputacion_promedio": 4.9,
+    "activo": true,
+    "avatar_url": "https://lh3.googleusercontent.com/aida-public/AB6AXuCN-G10M0xdNCxUFtpgYPPqxqYrZW6b8ISxiieyJBW0WIz3si2P_AU3KISKziAVMoaf4SZ9_YMoFvzb0oJsEKC5u-TE7r_DGmlhMpwmIubMNr6jAtxvAf_BtxnK0hcGcV6611jN2pKt6LTev61rZHb5cLMuF_wl0i-YE6vaXAl0ziaR5Cp2ybKtLqc3YS185qiQDbvHCfQapSwNzU1NTKoeHcBkDPG9s3OoPx_YDvo29Iv-RlThGedTI9WQEn766GzFGlqsioUhng",
+    "stats": {
+      "total_trades": 120
+    }
+  },
+  "cartas_ofreciendo": [
+    {
+      "id_carta": "c-001",
+      "nombre": "Charizard VMAX",
+      "juego": "Pokémon",
+      "edicion": "Darkness Ablaze",
+      "numero": "020/189",
+      "rareza": "Ultra Rare",
+      "imagen_url": "https://lh3.googleusercontent.com/aida-public/AB6AXuBnwYNNQRTtoB3P4IiQI0nQ7-il_1yasZpjMa4JYS1-X-a9Tlmn8bgfpI2MDm6mXrv8Hm5YiIeO4gPQb9ADb9V47xDNbvksci-bc2c45JuR9-Qpz7v6Tc8SS9iweih8KbnFk_4bg5f05UNfQQkXFIp_DDDGAlyo9G0PMjL-nx5SizJctq4r-quZKLVUs1UG_yoNBmpgMfKyi5n9ZaeK1PwI-NK1mLntdtcNubxhYKy-tCWsWsowo8CY_8f0Sy8vEHrCxe9bA7GtgA",
+      "descripcion": "Efecto: G-Max Wildfire. Descarte 2 Energías de este Pokémon.",
+      "precio_referencia": "$185.00",
+      "esta_gradeado": true,
+      "compania_grading": "PSA",
+      "puntaje_grading": 10,
+      "fecha_creacion": "2026-03-01T12:00:00Z"
+    },
+    {
+      "id_carta": "c-002",
+      "nombre": "Rayquaza Gold",
+      "juego": "Pokémon",
+      "edicion": "Celebrations",
+      "numero": "107/105",
+      "rareza": "Secret Rare",
+      "imagen_url": "https://lh3.googleusercontent.com/aida-public/AB6AXuAQV2F5GPNDwDzDDM0hvIHwhIrYDaaegd4gV23pEi3qLP0to_9nMsoBL4o4YldPBOSns1W9ShXfQK1LU3M8XtK05vTvpAt8h3Dz9UAEX1257L_5h6hNb4Vu-d-Ek8D73F9f9cJPumpVUzTeRy0bvf5VNqVgIoNuvgygLX9qtrUD7CWcymgyF0NbgzRjuqKfiEGouIndlWaJSn86LHrMhUjLpMdcmcHk9meWy1bpbwtfs06HFx4GGk4McoaCj52GUMLhEb2u44yWtQ",
+      "descripcion": "Efecto: Dragon Pulse. Descarte las 2 cartas superiores de su mazo.",
+      "precio_referencia": "TRADE",
+      "esta_gradeado": true,
+      "compania_grading": "BGS",
+      "puntaje_grading": 9.5,
+      "fecha_creacion": "2026-03-05T15:30:00Z"
+    },
+    {
+      "id_carta": "c-003",
+      "nombre": "Lugia GX",
+      "juego": "Pokémon",
+      "edicion": "Lost Thunder",
+      "numero": "159/214",
+      "rareza": "Full Art",
+      "imagen_url": "https://lh3.googleusercontent.com/aida-public/AB6AXuBnwYNNQRTtoB3P4IiQI0nQ7-il_1yasZpjMa4JYS1-X-a9Tlmn8bgfpI2MDm6mXrv8Hm5YiIeO4gPQb9ADb9V47xDNbvksci-bc2c45JuR9-Qpz7v6Tc8SS9iweih8KbnFk_4bg5f05UNfQQkXFIp_DDDGAlyo9G0PMjL-nx5SizJctq4r-quZKLVUs1UG_yoNBmpgMfKyi5n9ZaeK1PwI-NK1mLntdtcNubxhYKy-tCWsWsowo8CY_8f0Sy8vEHrCxe9bA7GtgA",
+      "descripcion": "Efecto: Lost Purge GX.",
+      "precio_referencia": "$45.00",
+      "esta_gradeado": false,
+      "compania_grading": null,
+      "puntaje_grading": null,
+      "fecha_creacion": "2026-03-10T09:15:00Z"
+    }
+  ]
+}

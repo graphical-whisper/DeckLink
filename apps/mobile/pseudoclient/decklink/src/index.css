@@ -1,0 +1,20 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer components {
+  .glass-panel {
+    @apply bg-brand-surface/70 backdrop-blur-md border border-brand-border;
+  }
+}
+
+body {
+  @apply bg-brand-dark text-white antialiased;
+  font-family: 'Public Sans', sans-serif;
+  min-height: max(884px, 100dvh);
+}
+
+/* Configuración obligatoria para Material Symbols */
+.material-symbols-outlined {
+  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+}
