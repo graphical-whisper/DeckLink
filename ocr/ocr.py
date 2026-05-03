@@ -53,16 +53,22 @@ def aislar_carta(img):
         
     return img
 def preprocesar_imagen(img):
-    """Mejora el contraste binarizando la imagen. Ideal para texto blanco sobre fondo oscuro y brillos."""
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     gray = cv2.resize(gray, None, fx=2, fy=2, interpolation=cv2.INTER_CUBIC)
-    
-    # Desenfoque para suavizar el patrón de semitonos de impresión
-    blur = cv2.GaussianBlur(gray, (5, 5), 0)
-    
-    # Umbral adaptativo: se ajusta a las diferencias de iluminación en la carta
-    thresh = cv2.adaptiveThreshold(blur, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY_INV, 15, 5)
-    
+
+    # CLAHE equalizes local contrast — handles holographic glare
+    clahe = cv2.createCLAHE(clipLimit=3.0, tileGridSize=(8, 8))
+    gray = clahe.apply(gray)
+
+    blur = cv2.GaussianBlur(gray, (3, 3), 0)
+
+    # THRESH_BINARY (not INV) — keeps white text white on dark background
+    thresh = cv2.adaptiveThreshold(
+        blur, 255,
+        cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
+        cv2.THRESH_BINARY,   # <-- changed from THRESH_BINARY_INV
+        15, 5
+    )
     return thresh
 
 def extraer_texto(imagen_procesada):
@@ -72,41 +78,35 @@ def extraer_texto(imagen_procesada):
 
 def extraer_numero_focalizado(img):
     alto, ancho = img.shape[:2]
-    
-    # Coordenadas calibradas exclusivamente para una carta sin márgenes externos
-    y_inicio = int(alto * 0.915)
-    y_fin = int(alto * 0.955) 
-    x_inicio = int(ancho * 0.17)
-    x_fin = int(ancho * 0.29)
-    
+
+    # Push the crop lower — the stamp is right at the bottom edge
+    y_inicio = int(alto * 0.955)   # was 0.915
+    y_fin    = int(alto * 0.995)   # was 0.955
+    x_inicio = int(ancho * 0.07)   # was 0.17 — stamp starts further left
+    x_fin    = int(ancho * 0.30)   # was 0.29
+
     recorte = img[y_inicio:y_fin, x_inicio:x_fin]
-    
-    # 1. Escala de grises y aumento de resolución
+
     gray = cv2.cvtColor(recorte, cv2.COLOR_BGR2GRAY)
-    gray = cv2.resize(gray, None, fx=3, fy=3, interpolation=cv2.INTER_CUBIC)
-    
-    # 2. Desenfoque suave para unificar los píxeles internos del texto
-    blur = cv2.GaussianBlur(gray, (5, 5), 0)
-    
-    # 3. Umbral Global (La solución al texto hueco)
-    # Todo píxel con intensidad menor a 90 (muy oscuro) será negro (0).
-    # Todo píxel mayor a 90 (halo blanco y fondo gris) será blanco (255).
-    _, thresh = cv2.threshold(blur, 90, 255, cv2.THRESH_BINARY)
-    
-    # 4. Margen blanco estabilizador
+    gray = cv2.resize(gray, None, fx=4, fy=4, interpolation=cv2.INTER_CUBIC)
+
+    clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(4, 4))
+    gray = clahe.apply(gray)
+
+    blur = cv2.GaussianBlur(gray, (3, 3), 0)
+
+    # Raise threshold to 128 — catches light-colored (yellow/white) digits
+    _, thresh = cv2.threshold(blur, 128, 255, cv2.THRESH_BINARY)
+
     thresh_final = cv2.copyMakeBorder(
-        thresh, top=15, bottom=15, left=15, right=15, 
+        thresh, 20, 20, 20, 20,
         borderType=cv2.BORDER_CONSTANT, value=[255, 255, 255]
     )
-    
-    # Guardar para validación
     cv2.imwrite("debug_recorte_filtro.jpg", thresh_final)
-    
-    # PSM 7 es el modo óptimo para una sola línea de texto
+
+    # Try PSM 8 (single word) if PSM 7 gives empty output
     config = r'--oem 3 --psm 7 -c tessedit_char_whitelist=0123456789/'
-    texto_numero = pytesseract.image_to_string(thresh_final, config=config)
-    
-    return texto_numero
+    return pytesseract.image_to_string(thresh_final, config=config)
 
 def identificar_carta(texto_general, texto_focalizado, base_de_datos):
     """Cruza los textos extraídos con la base de datos aplicando desambiguación por prefijo."""
