@@ -73,84 +73,50 @@ def extraer_texto(imagen_procesada):
 
 
 def extraer_numero_focalizado(img):
-    """
-    Extrae el número de carta (ej. '086/132') del pie de la carta.
-
-    Diagnóstico del fallo anterior:
-    - El texto del número mide ~4px de alto en una imagen de 600px: extremadamente pequeño.
-    - La barra '/' se confunde con '4', '7' o ',1' según el modo PSM.
-    - Solución: escala 10x + múltiples PSM + regex que tolera la barra mal leída.
-
-    Coordenadas calibradas empíricamente para cartas Pokémon estándar sin márgenes.
-    """
     alto, ancho = img.shape[:2]
 
-    # Banda horizontal donde vive el número: ~93.5% .. 97.8% de la altura,
-    # mitad izquierda de la carta (el número aparece después del ícono de set).
     y_inicio = int(alto * 0.935)
     y_fin    = int(alto * 0.978)
-    x_inicio = 0
-    x_fin    = int(ancho * 0.50)
+    recorte  = img[y_inicio:y_fin, 0:int(ancho * 0.50)]
 
-    recorte = img[y_inicio:y_fin, x_inicio:x_fin]
-
-    gray = cv2.cvtColor(recorte, cv2.COLOR_BGR2GRAY)
-
-    # Escala 10x — el texto es demasiado pequeño para Tesseract a resolución original
+    gray   = cv2.cvtColor(recorte, cv2.COLOR_BGR2GRAY)
     scaled = cv2.resize(gray, None, fx=10, fy=10, interpolation=cv2.INTER_CUBIC)
     blur   = cv2.GaussianBlur(scaled, (3, 3), 0)
     _, thresh = cv2.threshold(blur, 128, 255, cv2.THRESH_BINARY)
-
     thresh_final = cv2.copyMakeBorder(
-        thresh, top=40, bottom=40, left=40, right=40,
-        borderType=cv2.BORDER_CONSTANT, value=[255, 255, 255]
+        thresh, 40, 40, 40, 40, cv2.BORDER_CONSTANT, value=[255, 255, 255]
     )
-
-    # Guardar para validación visual
     cv2.imwrite("debug_recorte_filtro.jpg", thresh_final)
 
-    # PSM 6 (bloque), 11 (texto disperso) y 12 cubren distintos layouts del pie
     outputs = []
     for psm in [6, 11, 12]:
-        cfg = f'--oem 3 --psm {psm}'
-        txt = pytesseract.image_to_string(thresh_final, config=cfg).strip()
+        txt = pytesseract.image_to_string(thresh_final, config=f'--oem 3 --psm {psm}').strip()
         outputs.append(txt)
-
     return '\n'.join(outputs)
 
 
-def _parsear_numero_de_texto_focalizado(texto_focalizado):
-    """
-    Extrae 'NNN/NNN' del texto OCR tolerando que la barra '/'
-    sea leída como '4', '7', ',1', etc.
-
-    Devuelve la cadena 'NNN/NNN' o None si no se puede extraer.
-    """
-    # Caso 1: la barra sobrevivió intacta
-    m = re.search(r'(\d{1,3})\s*/\s*(\d{2,3})', texto_focalizado)
+def _parsear_numero_de_texto_focalizado(texto):
+    # Caso 1: barra sobrevivió
+    m = re.search(r'(\d{1,3})\s*/\s*(\d{2,3})', texto)
     if m:
         return f"{m.group(1).zfill(3)}/{m.group(2)}"
-
-    # Caso 2: NNN + 1 carácter basura + NNN  (ej. "0864132" o "086,132")
-    texto_limpio = re.sub(r'[^0-9a-zA-Z,./]', ' ', texto_focalizado)
-    m = re.search(r'(0\d{2}).(\d{3})', texto_limpio)
+    # Caso 2: "086 7,132" → compactar espacios, luego NNN + basura + NNN
+    compact = re.sub(r'\s+', '', texto)
+    m = re.search(r'(0\d{2})\D{0,3}(\d{3})', compact)
     if m:
         return f"{m.group(1)}/{m.group(2)}"
-
-    # Caso 3: extraer solo dígitos y buscar el patrón 0NN···NNN
-    solo_digitos = re.sub(r'[^0-9]', '', texto_focalizado)
-    m = re.search(r'(0\d{2})\d{0,2}(\d{3})', solo_digitos)
+    # Caso 3: solo dígitos — "0864132"
+    digits = re.sub(r'[^0-9]', '', texto)
+    m = re.search(r'(0\d{2})\d{0,2}(\d{3})', digits)
     if m:
         return f"{m.group(1)}/{m.group(2)}"
-
     return None
 
 
 def identificar_carta(texto_general, texto_focalizado, base_de_datos):
-    """Cruza los textos extraídos con la base de datos aplicando desambiguación por prefijo."""
     patron_numero = re.compile(r'\b\d{1,3}\s*/\s*\d{1,3}\b')
-
-    # 1. Intentar parsear el número focalizado con el método robusto
+    
+    # NUEVO: parseo robusto del número focalizado
     numero_parseado = _parsear_numero_de_texto_focalizado(texto_focalizado)
     if numero_parseado:
         for carta in base_de_datos:
