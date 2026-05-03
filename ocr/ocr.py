@@ -33,10 +33,11 @@ def extraer_numero_focalizado(img):
     
     # 1. Nuevas coordenadas estimadas para esta fotografía
     # Ajustado para considerar el fondo blanco y el soporte
-    y_inicio = int(alto * 0.84)
-    y_fin = int(alto * 0.89)
-    x_inicio = int(ancho * 0.20)
-    x_fin = int(ancho * 0.36)
+    # 1. Nuevas coordenadas calibradas
+    y_inicio = int(alto * 0.865)  # Se desplaza hacia abajo para omitir el texto superior
+    y_fin = int(alto * 0.91)      # Se desplaza el límite inferior para no cortar la base de los números
+    x_inicio = int(ancho * 0.18)  # Se mueve a la izquierda para dar margen al "0"
+    x_fin = int(ancho * 0.31)     # Se recorta la derecha para eliminar las estrellas
     
     recorte = img[y_inicio:y_fin, x_inicio:x_fin]
     
