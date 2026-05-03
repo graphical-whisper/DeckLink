@@ -16,17 +16,12 @@ def cargar_base_de_datos(ruta_archivo):
         return json.load(archivo)
 
 def preprocesar_imagen(img):
-    """Mejora el contraste binarizando la imagen. Ideal para texto blanco sobre fondo oscuro y brillos."""
+    """Mejora el contraste conservando la imagen en escala de grises (CLAHE)."""
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     gray = cv2.resize(gray, None, fx=2, fy=2, interpolation=cv2.INTER_CUBIC)
-    
-    # Desenfoque para suavizar el patrón de semitonos de impresión
-    blur = cv2.GaussianBlur(gray, (5, 5), 0)
-    
-    # Umbral adaptativo: se ajusta a las diferencias de iluminación en la carta
-    thresh = cv2.adaptiveThreshold(blur, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY_INV, 15, 5)
-    
-    return thresh
+    suavizado = cv2.bilateralFilter(gray, 11, 17, 17)
+    clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8,8))
+    return clahe.apply(suavizado)
 
 def extraer_texto(imagen_procesada):
     """Extrae el texto general de la carta."""
@@ -69,7 +64,6 @@ def extraer_numero_focalizado(img):
     
     return texto_numero
     
-    return texto_numero
 def identificar_carta(texto_general, texto_focalizado, base_de_datos):
     """Cruza los textos extraídos con la base de datos aplicando desambiguación por prefijo."""
     patron_numero = re.compile(r'\b\d{1,3}\s*/\s*\d{1,3}\b')
