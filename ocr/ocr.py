@@ -31,38 +31,35 @@ def extraer_texto(imagen_procesada):
 def extraer_numero_focalizado(img):
     alto, ancho = img.shape[:2]
     
-    # 1. Nuevas coordenadas estimadas para esta fotografía
-    # Ajustado para considerar el fondo blanco y el soporte
-    # 1. Coordenadas balanceadas para "086/132"
-    y_inicio = int(alto * 0.87)    # Se mantiene igual
-    y_fin = int(alto * 0.905)      # Ligero aumento para no cortar la base de la barra '/'
-    x_inicio = int(ancho * 0.20)   # Se expande a la izquierda para recuperar el "0" completo
-    x_fin = int(ancho * 0.30)      # Se expande a la derecha para recuperar el "2"
+    # Coordenadas que ya validamos como correctas
+    y_inicio = int(alto * 0.87)
+    y_fin = int(alto * 0.905)
+    x_inicio = int(ancho * 0.20)
+    x_fin = int(ancho * 0.30)
     
     recorte = img[y_inicio:y_fin, x_inicio:x_fin]
     
-    # 2. GUARDAR RECORTE ORIGINAL A COLOR PARA CALIBRAR
-    # Esto le permitirá ver exactamente qué está cortando antes de los filtros
-    cv2.imwrite("debug_color.jpg", recorte)
-    
-    # 3. Procesamiento (Binarización adaptada)
+    # 1. Escala de grises y aumento de resolución
     gray = cv2.cvtColor(recorte, cv2.COLOR_BGR2GRAY)
     gray = cv2.resize(gray, None, fx=3, fy=3, interpolation=cv2.INTER_CUBIC)
-    blur = cv2.GaussianBlur(gray, (3, 3), 0)
-    _, thresh = cv2.threshold(blur, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
     
-    if np.mean(thresh) < 127:
-        thresh = cv2.bitwise_not(thresh)
-        
+    # 2. Filtro bilateral: limpia la textura del fondo pero mantiene los bordes del texto nítidos
+    blur = cv2.bilateralFilter(gray, 9, 75, 75)
+    
+    # 3. Umbral Adaptativo: Extrae solo el texto más oscuro ignorando el halo blanco
+    thresh = cv2.adaptiveThreshold(blur, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 21, 5)
+    
+    # 4. Margen blanco estabilizador
     thresh_final = cv2.copyMakeBorder(
         thresh, top=15, bottom=15, left=15, right=15, 
         borderType=cv2.BORDER_CONSTANT, value=[255, 255, 255]
     )
     
-    # Guardar también el resultado final del filtro
+    # Guardar el filtro final para diagnóstico
     cv2.imwrite("debug_recorte_filtro.jpg", thresh_final)
     
-    config = r'--oem 3 --psm 7 -c tessedit_char_whitelist=0123456789/'
+    # PSM 8: Le indica a Tesseract que asuma que la imagen es una sola "palabra" continua
+    config = r'--oem 3 --psm 8 -c tessedit_char_whitelist=0123456789/'
     texto_numero = pytesseract.image_to_string(thresh_final, config=config)
     
     return texto_numero
