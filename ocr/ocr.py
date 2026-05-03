@@ -3,7 +3,7 @@ import pytesseract
 import json
 import re
 import os
-import numpy as np  # <-- AÑADIR ESTA LÍNEA
+import numpy as np 
 from rapidfuzz import process, fuzz
 
 # pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
@@ -31,34 +31,36 @@ def extraer_texto(imagen_procesada):
 def extraer_numero_focalizado(img):
     alto, ancho = img.shape[:2]
     
-    # Recorte actual (Esquina inferior izquierda). 
-    recorte = img[int(alto * 0.90):int(alto * 0.96), int(ancho * 0.14):int(ancho * 0.28)]
+    # 1. Nuevas coordenadas estimadas para esta fotografía
+    # Ajustado para considerar el fondo blanco y el soporte
+    y_inicio = int(alto * 0.84)
+    y_fin = int(alto * 0.89)
+    x_inicio = int(ancho * 0.20)
+    x_fin = int(ancho * 0.36)
     
+    recorte = img[y_inicio:y_fin, x_inicio:x_fin]
+    
+    # 2. GUARDAR RECORTE ORIGINAL A COLOR PARA CALIBRAR
+    # Esto le permitirá ver exactamente qué está cortando antes de los filtros
+    cv2.imwrite("debug_color.jpg", recorte)
+    
+    # 3. Procesamiento (Binarización adaptada)
     gray = cv2.cvtColor(recorte, cv2.COLOR_BGR2GRAY)
     gray = cv2.resize(gray, None, fx=3, fy=3, interpolation=cv2.INTER_CUBIC)
-    
-    # Desenfoque leve para limpiar artefactos
     blur = cv2.GaussianBlur(gray, (3, 3), 0)
-    
-    # Binarización de Otsu
     _, thresh = cv2.threshold(blur, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
     
-    # Asegurar que el texto sea negro sobre blanco
-    # Si el fondo es negro (la mayoría de los píxeles son 0), invertimos la imagen
     if np.mean(thresh) < 127:
         thresh = cv2.bitwise_not(thresh)
         
-    # Añadir un borde blanco (padding) para ayudar a Tesseract a identificar los márgenes
     thresh_final = cv2.copyMakeBorder(
-        thresh, 
-        top=15, bottom=15, left=15, right=15, 
-        borderType=cv2.BORDER_CONSTANT, 
-        value=[255, 255, 255]
+        thresh, top=15, bottom=15, left=15, right=15, 
+        borderType=cv2.BORDER_CONSTANT, value=[255, 255, 255]
     )
     
-    cv2.imwrite("debug_recorte.jpg", thresh_final)
+    # Guardar también el resultado final del filtro
+    cv2.imwrite("debug_recorte_filtro.jpg", thresh_final)
     
-    # PSM 7 o 8 suelen ser los mejores para líneas únicas de números
     config = r'--oem 3 --psm 7 -c tessedit_char_whitelist=0123456789/'
     texto_numero = pytesseract.image_to_string(thresh_final, config=config)
     
