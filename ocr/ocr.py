@@ -31,9 +31,9 @@ def extraer_texto(imagen_procesada):
 def extraer_numero_focalizado(img):
     alto, ancho = img.shape[:2]
     
-    # Coordenadas que ya validamos como correctas
+    # Coordenadas con un ligero ajuste en 'y_fin' para eliminar la basura inferior
     y_inicio = int(alto * 0.87)
-    y_fin = int(alto * 0.905)
+    y_fin = int(alto * 0.895) 
     x_inicio = int(ancho * 0.20)
     x_fin = int(ancho * 0.30)
     
@@ -43,11 +43,13 @@ def extraer_numero_focalizado(img):
     gray = cv2.cvtColor(recorte, cv2.COLOR_BGR2GRAY)
     gray = cv2.resize(gray, None, fx=3, fy=3, interpolation=cv2.INTER_CUBIC)
     
-    # 2. Filtro bilateral: limpia la textura del fondo pero mantiene los bordes del texto nítidos
-    blur = cv2.bilateralFilter(gray, 9, 75, 75)
+    # 2. Desenfoque suave para unificar los píxeles internos del texto
+    blur = cv2.GaussianBlur(gray, (5, 5), 0)
     
-    # 3. Umbral Adaptativo: Extrae solo el texto más oscuro ignorando el halo blanco
-    thresh = cv2.adaptiveThreshold(blur, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 21, 5)
+    # 3. Umbral Global (La solución al texto hueco)
+    # Todo píxel con intensidad menor a 90 (muy oscuro) será negro (0).
+    # Todo píxel mayor a 90 (halo blanco y fondo gris) será blanco (255).
+    _, thresh = cv2.threshold(blur, 90, 255, cv2.THRESH_BINARY)
     
     # 4. Margen blanco estabilizador
     thresh_final = cv2.copyMakeBorder(
@@ -55,11 +57,11 @@ def extraer_numero_focalizado(img):
         borderType=cv2.BORDER_CONSTANT, value=[255, 255, 255]
     )
     
-    # Guardar el filtro final para diagnóstico
+    # Guardar para validación
     cv2.imwrite("debug_recorte_filtro.jpg", thresh_final)
     
-    # PSM 8: Le indica a Tesseract que asuma que la imagen es una sola "palabra" continua
-    config = r'--oem 3 --psm 8 -c tessedit_char_whitelist=0123456789/'
+    # PSM 7 es el modo óptimo para una sola línea de texto
+    config = r'--oem 3 --psm 7 -c tessedit_char_whitelist=0123456789/'
     texto_numero = pytesseract.image_to_string(thresh_final, config=config)
     
     return texto_numero
