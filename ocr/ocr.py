@@ -33,12 +33,11 @@ def extraer_numero_focalizado(img):
     
     # 1. Nuevas coordenadas estimadas para esta fotografía
     # Ajustado para considerar el fondo blanco y el soporte
-    # 1. Nuevas coordenadas calibradas
-   # 1. Coordenadas de aislamiento estricto
-    y_inicio = int(alto * 0.87)   # Ajuste superior para omitir la franja amarilla
-    y_fin = int(alto * 0.90)      # Ajuste inferior para eliminar la textura gris base
-    x_inicio = int(ancho * 0.22)  # Desplazamiento a la derecha para omitir el recuadro "EN"
-    x_fin = int(ancho * 0.29)     # Recorte izquierdo para excluir la estrella
+    # 1. Coordenadas balanceadas para "086/132"
+    y_inicio = int(alto * 0.87)    # Se mantiene igual
+    y_fin = int(alto * 0.905)      # Ligero aumento para no cortar la base de la barra '/'
+    x_inicio = int(ancho * 0.20)   # Se expande a la izquierda para recuperar el "0" completo
+    x_fin = int(ancho * 0.30)      # Se expande a la derecha para recuperar el "2"
     
     recorte = img[y_inicio:y_fin, x_inicio:x_fin]
     
