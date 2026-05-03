@@ -128,7 +128,7 @@ def identificar_carta(texto_general, texto_focalizado, base_de_datos):
 
 def main():
     ruta_db = os.path.join("data", "cards.json")
-    ruta_fotografia = os.path.join("cartaprueba", "mabsol86.1.jpg")
+    ruta_fotografia = os.path.join("cartaprueba", "mabsol86.jpg")
     
     try:
         base_de_datos = cargar_base_de_datos(ruta_db)
