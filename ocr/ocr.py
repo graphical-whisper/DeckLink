@@ -16,12 +16,17 @@ def cargar_base_de_datos(ruta_archivo):
         return json.load(archivo)
 
 def preprocesar_imagen(img):
-    """Mejora el contraste conservando la imagen en escala de grises (CLAHE)."""
+    """Mejora el contraste binarizando la imagen. Ideal para texto blanco sobre fondo oscuro y brillos."""
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     gray = cv2.resize(gray, None, fx=2, fy=2, interpolation=cv2.INTER_CUBIC)
-    suavizado = cv2.bilateralFilter(gray, 11, 17, 17)
-    clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8,8))
-    return clahe.apply(suavizado)
+    
+    # Desenfoque para suavizar el patrón de semitonos de impresión
+    blur = cv2.GaussianBlur(gray, (5, 5), 0)
+    
+    # Umbral adaptativo: se ajusta a las diferencias de iluminación en la carta
+    thresh = cv2.adaptiveThreshold(blur, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY_INV, 15, 5)
+    
+    return thresh
 
 def extraer_texto(imagen_procesada):
     """Extrae el texto general de la carta."""
@@ -31,48 +36,38 @@ def extraer_texto(imagen_procesada):
 def extraer_numero_focalizado(img):
     alto, ancho = img.shape[:2]
     
-    # 1. Recorte quirúrgico: Focalizado estrictamente en las coordenadas de "086/132",
-    # excluyendo el logo de "MEG EN" a la izquierda y las estrellas a la derecha.
+    # Recorte actual (Esquina inferior izquierda). 
     recorte = img[int(alto * 0.90):int(alto * 0.96), int(ancho * 0.14):int(ancho * 0.28)]
     
     gray = cv2.cvtColor(recorte, cv2.COLOR_BGR2GRAY)
     gray = cv2.resize(gray, None, fx=3, fy=3, interpolation=cv2.INTER_CUBIC)
     
-    # Desenfoque leve
+    # Desenfoque leve para limpiar artefactos
     blur = cv2.GaussianBlur(gray, (3, 3), 0)
     
-    # Binarización de Otsu e inversión
+    # Binarización de Otsu
     _, thresh = cv2.threshold(blur, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
-    thresh_inv = cv2.bitwise_not(thresh)
     
-    # Relleno de inundación (Flood Fill) para eliminar el fondo oscuro
-    h, w = thresh_inv.shape[:2]
-    mask = np.zeros((h+2, w+2), np.uint8)
-    cv2.floodFill(thresh_inv, mask, (0, 0), 255)
-    cv2.floodFill(thresh_inv, mask, (0, h-1), 255)
-    cv2.floodFill(thresh_inv, mask, (w-1, 0), 255)
-    cv2.floodFill(thresh_inv, mask, (w-1, h-1), 255)
-    
-    # 2. Adelgazamiento de trazo (Dilatación)
-    # Al dilatar el fondo blanco (255), comprimimos el grosor del texto negro (0),
-    # devolviéndole a los números sus proporciones tipográficas naturales.
-    kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (2, 2))
-    thresh_adelgazado = cv2.dilate(thresh_inv, kernel, iterations=1)
-    
-    # Añadir margen blanco estabilizador
+    # Asegurar que el texto sea negro sobre blanco
+    # Si el fondo es negro (la mayoría de los píxeles son 0), invertimos la imagen
+    if np.mean(thresh) < 127:
+        thresh = cv2.bitwise_not(thresh)
+        
+    # Añadir un borde blanco (padding) para ayudar a Tesseract a identificar los márgenes
     thresh_final = cv2.copyMakeBorder(
-        thresh_adelgazado, 
-        top=20, bottom=20, left=20, right=20, 
+        thresh, 
+        top=15, bottom=15, left=15, right=15, 
         borderType=cv2.BORDER_CONSTANT, 
         value=[255, 255, 255]
     )
     
-    # Guardar validación visual
     cv2.imwrite("debug_recorte.jpg", thresh_final)
     
-    # 3. PSM 8: Asume que la imagen contiene una sola "palabra" (ideal para números continuos)
-    config = r'--oem 3 --psm 8 -c tessedit_char_whitelist=0123456789/'
+    # PSM 7 o 8 suelen ser los mejores para líneas únicas de números
+    config = r'--oem 3 --psm 7 -c tessedit_char_whitelist=0123456789/'
     texto_numero = pytesseract.image_to_string(thresh_final, config=config)
+    
+    return texto_numero
     
     return texto_numero
 def identificar_carta(texto_general, texto_focalizado, base_de_datos):
