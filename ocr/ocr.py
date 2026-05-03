@@ -149,16 +149,16 @@ def main():
             
         # Procesamiento General
         img_procesada = preprocesar_imagen(img_original)
-        texto_general = extraer_texto(img_procesada)
-        
-        # Lectura general de la carta
-        texto_general = pytesseract.image_to_string(imagen_procesada, lang='eng+spa') # o la variable de imagen que esté usando
 
-        # Agregue estas líneas para imprimir el texto crudo en la consola:
+        # Extraer el texto (modifique la función extraer_texto si quiere añadir el idioma)
+        texto_general = extraer_texto(img_procesada)
+
+        # --- AÑADA ESTAS LÍNEAS AQUÍ ---
         print("\n--- TEXTO GENERAL EXTRAÍDO ---")
         print(texto_general)
         print("-------------------------------\n")
-        
+        # ------------------------------
+
         # Procesamiento Focalizado (Esquina inferior)
         texto_numero = extraer_numero_focalizado(img_original)
         print("\n--- LECTURA FOCALIZADA DE NÚMERO ---")
