@@ -20,13 +20,13 @@ jobs:
           node-version: "20"
 
       - name: Install dependencies
-        run: npm install --workspace=services/backend
+        run: cd apps/backend && npm install
 
       - name: Lint backend
-        run: npm run lint --workspace=services/backend
+        run: cd apps/backend && npm run lint
 
       - name: Run backend tests
-        run: npm test --workspace=services/backend
+        run: cd apps/backend && npm test
 
       - name: Validate proto schemas
-        run: ./scripts/validate-proto.sh
+        run: ./infra/scripts/validate-proto.sh
