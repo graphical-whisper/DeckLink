@@ -16,7 +16,7 @@ def cargar_base_de_datos(ruta_archivo):
         return json.load(archivo)
 
 def aislar_carta(img):
-    """Detecta los bordes físicos de la carta y recorta cualquier fondo externo."""
+    """Detecta los bordes físicos de la carta. Ignora si la imagen ya está recortada."""
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     blur = cv2.GaussianBlur(gray, (5, 5), 0)
     
@@ -33,18 +33,25 @@ def aislar_carta(img):
     if not contornos:
         return img
         
-    # Seleccionar el contorno con mayor área (la carta)
+    # Seleccionar el contorno con mayor área
     contorno_mayor = max(contornos, key=cv2.contourArea)
     x, y, w, h = cv2.boundingRect(contorno_mayor)
     
     alto_img, ancho_img = img.shape[:2]
+    area_imagen = alto_img * ancho_img
+    area_contorno = w * h
     
-    # Validar que el recorte sea representativo (al menos el 40% de la imagen)
-    if (w * h) > (alto_img * ancho_img * 0.4):
+    # 1. SALVAGUARDA: Si el contorno ocupa más del 90% de la imagen, 
+    # significa que la imagen original ya es la carta pura. No se recorta.
+    if area_contorno > (area_imagen * 0.90):
+        return img
+        
+    # 2. RECORTAR: Si el contorno es razonable (entre 40% y 90%), 
+    # es una carta con fondo externo. Procedemos a aislarla.
+    if (area_imagen * 0.4) < area_contorno <= (area_imagen * 0.90):
         return img[y:y+h, x:x+w]
         
     return img
-
 def preprocesar_imagen(img):
     """Mejora el contraste binarizando la imagen. Ideal para texto blanco sobre fondo oscuro y brillos."""
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
